@@ -1,2 +1,3 @@
-# lab-discord-bot
+# Lab Bot
+
 An experimental Discord bot
