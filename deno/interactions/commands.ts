@@ -1,4 +1,4 @@
-import "https://deno.land/x/dotenv@v3.2.0/load.ts";
+import { appId, headers } from "./config.ts";
 import { afkAppCommands } from "./afk/mod.ts";
 
 type Guild = {
@@ -12,14 +12,6 @@ type Guild = {
 
 type CreateCommandsParams = {
   guildId: string;
-};
-
-const appId = Deno.env.get("DISCORD_CLIENT_ID");
-const token = Deno.env.get("DISCORD_BOT_TOKEN");
-
-const headers = {
-  "Content-Type": "application/json",
-  Authorization: `Bot ${token}`,
 };
 
 const createCommands = async ({ guildId }: CreateCommandsParams) => {

@@ -1,4 +1,5 @@
-import { InteractionData } from "../types.ts";
+import { dictators, headers, isDictatorModeOn } from "../config.ts";
+import { InteractingMember, InteractionData } from "../types.ts";
 
 export const afkAppCommands = [
   {
@@ -10,13 +11,6 @@ export const afkAppCommands = [
     name: "AFK Off",
   },
 ];
-
-const token = Deno.env.get("DISCORD_BOT_TOKEN");
-
-const headers = {
-  "Content-Type": "application/json",
-  Authorization: `Bot ${token}`,
-};
 
 const prefix = `[AFK] `;
 
@@ -78,8 +72,24 @@ const removeAfk = async (data: InteractionData) => {
   console.log(response);
 };
 
-export const afkAppCommandResponse = (data: InteractionData) => {
+export const afkAppCommandResponse = ({
+  data,
+  member,
+}: {
+  data: InteractionData;
+  member: InteractingMember;
+}) => {
   if (data.name.toLocaleLowerCase().includes("on")) {
+    if (!hasPermission({ data, member })) {
+      return {
+        type: 4,
+        data: {
+          content: `You don't have the permission to do it.`,
+          flags: 1 << 6,
+        },
+      };
+    }
+
     makeUserAfk(data);
 
     return {
@@ -90,6 +100,16 @@ export const afkAppCommandResponse = (data: InteractionData) => {
       },
     };
   } else if (data.name.toLocaleLowerCase().includes("off")) {
+    if (!hasPermission({ data, member })) {
+      return {
+        type: 4,
+        data: {
+          content: `You don't have the permission to do it.`,
+          flags: 1 << 6,
+        },
+      };
+    }
+
     removeAfk(data);
 
     return {
@@ -101,3 +121,17 @@ export const afkAppCommandResponse = (data: InteractionData) => {
     };
   }
 };
+
+function hasPermission({
+  data,
+  member,
+}: {
+  data: InteractionData;
+  member: InteractingMember;
+}) {
+  if (isDictatorModeOn && dictators?.includes(member?.user?.id)) {
+    return true;
+  }
+
+  return member?.user?.id === Object.values(data.resolved.users)[0]?.id;
+}

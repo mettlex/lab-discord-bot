@@ -7,7 +7,8 @@ import {
 } from "https://deno.land/x/sift@0.6.0/mod.ts";
 import { hexToUint8Array } from "./utils.ts";
 import { afkAppCommandResponse } from "./afk/mod.ts";
-import { InteractionData } from "./types.ts";
+import { InteractingMember, InteractionData } from "./types.ts";
+import { PUBLIC_KEY } from "./config.ts";
 
 serve(
   {
@@ -42,9 +43,14 @@ async function home(request: Request) {
     );
   }
 
-  const { type = 0, data } = JSON.parse(body) as {
+  const {
+    type = 0,
+    data,
+    member,
+  } = JSON.parse(body) as {
     type: number;
     data: InteractionData;
+    member: InteractingMember;
   };
   // Discord performs Ping interactions to test our application.
   // Type 1 in a request implies a Ping interaction.
@@ -58,7 +64,7 @@ async function home(request: Request) {
   // It implies that a user has issued a command.
   if (type === 2) {
     if (data.name.includes("AFK")) {
-      return json(afkAppCommandResponse(data));
+      return json(afkAppCommandResponse({ data, member }));
     }
 
     return json({
@@ -81,7 +87,6 @@ async function home(request: Request) {
 async function verifySignature(
   request: Request,
 ): Promise<{ valid: boolean; body: string }> {
-  const PUBLIC_KEY = Deno.env.get("DISCORD_PUBLIC_KEY")!;
   // Discord sends these headers with every request.
   const signature = request.headers.get("X-Signature-Ed25519")!;
   const timestamp = request.headers.get("X-Signature-Timestamp")!;

@@ -8,6 +8,22 @@ export interface InteractionData {
   options?: Option[];
 }
 
+export interface InteractingMember {
+  avatar: null | string;
+  communication_disabled_until: null | string;
+  deaf: boolean;
+  flags: number;
+  is_pending: boolean;
+  joined_at: string;
+  mute: boolean;
+  nick: null | string;
+  pending: boolean;
+  permissions: string;
+  premium_since: null | string;
+  roles: string[];
+  user: User;
+}
+
 export interface Option {
   name: string;
 }
