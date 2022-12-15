@@ -17,17 +17,23 @@ const prefix = `[AFK] `;
 const makeUserAfk = async (data: InteractionData) => {
   const user = Object.values(data.resolved.users)[0];
 
-  const url = `https://discord.com/api/v10/guilds/${data.guild_id}/members/${user.id}`;
-
   const member =
     (data.resolved.members &&
       Object.keys(data.resolved.members).length > 0 &&
       Object.values(data.resolved.members)[0]) ||
     null;
 
+  const name = member?.nick ? member?.nick : user.username;
+
+  if (name.startsWith(prefix)) {
+    return;
+  }
+
   const body = JSON.stringify({
-    nick: `${prefix}${member?.nick ? member?.nick : user.username}`,
+    nick: `${prefix}${name}`,
   });
+
+  const url = `https://discord.com/api/v10/guilds/${data.guild_id}/members/${user.id}`;
 
   const response = await fetch(url, {
     method: "PATCH",
@@ -46,17 +52,23 @@ const makeUserAfk = async (data: InteractionData) => {
 const removeAfk = async (data: InteractionData) => {
   const user = Object.values(data.resolved.users)[0];
 
-  const url = `https://discord.com/api/v10/guilds/${data.guild_id}/members/${user.id}`;
-
   const member =
     (data.resolved.members &&
       Object.keys(data.resolved.members).length > 0 &&
       Object.values(data.resolved.members)[0]) ||
     null;
 
+  const name = member?.nick ? member?.nick : user.username;
+
+  if (!name.startsWith(prefix)) {
+    return;
+  }
+
   const body = JSON.stringify({
-    nick: `${member?.nick ? member?.nick : user.username}`.replace(prefix, ""),
+    nick: `${name}`.replace(prefix, ""),
   });
+
+  const url = `https://discord.com/api/v10/guilds/${data.guild_id}/members/${user.id}`;
 
   const response = await fetch(url, {
     method: "PATCH",
