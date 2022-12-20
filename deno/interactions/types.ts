@@ -1,12 +1,28 @@
-export interface InteractionData {
-  guild_id: string;
-  id: string;
-  name: string;
-  resolved: Resolved;
-  target_id: string;
+export type ComponentField = {
+  custom_id: string;
   type: number;
-  options?: Option[];
-}
+  value: string;
+};
+
+export type ComponentInInteractionData = {
+  components: ComponentField[];
+  type: 1;
+};
+
+export type InteractionData =
+  | {
+      guild_id: string;
+      id: string;
+      name: string;
+      resolved: Resolved;
+      target_id: string;
+      type: number;
+      options?: Option[];
+    }
+  | {
+      components: ComponentInInteractionData[];
+      custom_id: string;
+    };
 
 export interface InteractingMember {
   avatar: null | string;

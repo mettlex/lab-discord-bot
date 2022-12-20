@@ -7,8 +7,13 @@ import {
 } from "https://deno.land/x/sift@0.6.0/mod.ts";
 import { hexToUint8Array } from "./utils.ts";
 import { afkAppCommandResponse } from "./afk/mod.ts";
+import {
+  runTsSlashCommandResponse,
+  sendTsCodeOutput,
+} from "./run_typescript/mod.ts";
 import { InteractingMember, InteractionData } from "./types.ts";
 import { PUBLIC_KEY } from "./config.ts";
+import { tsRateLimit } from "./store.ts";
 
 serve(
   {
@@ -63,16 +68,69 @@ async function home(request: Request) {
   // Type 2 in a request is an ApplicationCommand interaction.
   // It implies that a user has issued a command.
   if (type === 2) {
-    if (data.name.includes("AFK")) {
+    if ("name" in data && data.name.includes("AFK")) {
       return json(afkAppCommandResponse({ data, member }));
+    } else if ("name" in data && data.name.includes("run_t")) {
+      return json(runTsSlashCommandResponse());
     }
 
     return json({
-      // Type 4 responds with the below message retaining the user's
-      // input at the top.
       type: 4,
       data: {
         content: `OK!`,
+        flags: 1 << 6,
+      },
+    });
+  }
+  // Type 5 in a request is a Modal submission.
+  else if (type === 5) {
+    if (!("components" in data)) {
+      return json({
+        type: 4,
+        data: {
+          content: `No Components!`,
+          flags: 1 << 6,
+        },
+      });
+    }
+
+    if (data.custom_id.includes("ts_code")) {
+      if (!tsRateLimit[member.user.id]) {
+        tsRateLimit[member.user.id] = {
+          requests: 1,
+          lastRequestAt: Date.now(),
+        };
+      } else {
+        const trl = tsRateLimit[member.user.id];
+
+        const oneMinute = 60000;
+
+        trl.requests++;
+
+        if (Date.now() - trl.lastRequestAt < oneMinute && trl.requests > 3) {
+          return json({
+            type: 4,
+            data: {
+              content: `Cool down. Retry after ${Math.ceil(
+                60 - (Date.now() - trl.lastRequestAt) / 1000,
+              )} seconds.`,
+              flags: 1 << 6,
+            },
+          });
+        } else if (Date.now() - trl.lastRequestAt > oneMinute) {
+          tsRateLimit[member.user.id].requests = 0;
+        }
+      }
+
+      tsRateLimit[member.user.id].lastRequestAt = Date.now();
+
+      return json(await sendTsCodeOutput(data));
+    }
+
+    return json({
+      type: 4,
+      data: {
+        content: `OK Modal!`,
         flags: 1 << 6,
       },
     });

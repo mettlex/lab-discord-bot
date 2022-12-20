@@ -17,3 +17,5 @@ export const dictators = Deno.env
   ?.trim()
   ?.split(",")
   .map((x) => x.trim());
+
+export const tsOverHttpUrl = Deno.env.get("TS_OVER_HTTP_URL") || "";

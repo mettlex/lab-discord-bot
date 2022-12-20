@@ -15,6 +15,10 @@ export const afkAppCommands = [
 const prefix = `[AFK] `;
 
 const makeUserAfk = async (data: InteractionData) => {
+  if (!("resolved" in data)) {
+    return;
+  }
+
   const user = Object.values(data.resolved.users)[0];
 
   const member =
@@ -50,6 +54,10 @@ const makeUserAfk = async (data: InteractionData) => {
 };
 
 const removeAfk = async (data: InteractionData) => {
+  if (!("resolved" in data)) {
+    return;
+  }
+
   const user = Object.values(data.resolved.users)[0];
 
   const member =
@@ -91,7 +99,7 @@ export const afkAppCommandResponse = ({
   data: InteractionData;
   member: InteractingMember;
 }) => {
-  if (data.name.toLocaleLowerCase().includes("on")) {
+  if ("name" in data && data.name.toLocaleLowerCase().includes("on")) {
     if (!hasPermission({ data, member })) {
       return {
         type: 4,
@@ -111,7 +119,7 @@ export const afkAppCommandResponse = ({
         flags: 1 << 6,
       },
     };
-  } else if (data.name.toLocaleLowerCase().includes("off")) {
+  } else if ("name" in data && data.name.toLocaleLowerCase().includes("off")) {
     if (!hasPermission({ data, member })) {
       return {
         type: 4,
@@ -141,6 +149,10 @@ function hasPermission({
   data: InteractionData;
   member: InteractingMember;
 }) {
+  if (!("resolved" in data)) {
+    return false;
+  }
+
   if (isDictatorModeOn && dictators?.includes(member?.user?.id)) {
     return true;
   }
