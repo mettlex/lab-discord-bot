@@ -62,7 +62,6 @@ export const sendTsCodeOutput = async (data: InteractionData) => {
     type: 4,
     data: {
       content: `Code:\n\`\`\`ts\n${code}\n\`\`\`\nOutput:\n\`\`\`\n${result}\n\`\`\``,
-      flags: 1 << 6,
     },
   };
 };
