@@ -1,6 +1,7 @@
 import { appId, headers } from "./config.ts";
 import { afkAppCommands } from "./afk/mod.ts";
-import { runTsSlashCommands } from "./run_typescript/mod.ts";
+import { runTsAppCommands, runTsSlashCommands } from "./run_typescript/mod.ts";
+import { sleep } from "./utils.ts";
 
 type Guild = {
   id: string;
@@ -18,7 +19,11 @@ type CreateCommandsParams = {
 const createCommands = async ({ guildId }: CreateCommandsParams) => {
   const commandUrl = `https://discord.com/api/v10/applications/${appId}/guilds/${guildId}/commands`;
 
-  const commands = [...afkAppCommands, ...runTsSlashCommands];
+  const commands = [
+    ...afkAppCommands,
+    ...runTsSlashCommands,
+    ...runTsAppCommands,
+  ];
 
   for (const command of commands) {
     const body = JSON.stringify(command);
@@ -35,6 +40,8 @@ const createCommands = async ({ guildId }: CreateCommandsParams) => {
       });
 
     console.log(guildId, response);
+
+    await sleep(4000);
   }
 };
 

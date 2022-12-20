@@ -1,6 +1,17 @@
 import { tsOverHttpUrl } from "../config.ts";
 import { InteractionData } from "../types.ts";
 
+export const runTsAppCommands = [
+  {
+    type: 2,
+    name: "Run TypeScript",
+  },
+  {
+    type: 3,
+    name: "Run TypeScript",
+  },
+];
+
 export const runTsSlashCommands = [
   {
     name: "run_ts",

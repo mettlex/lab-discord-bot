@@ -70,7 +70,10 @@ async function home(request: Request) {
   if (type === 2) {
     if ("name" in data && data.name.includes("AFK")) {
       return json(afkAppCommandResponse({ data, member }));
-    } else if ("name" in data && data.name.includes("run_t")) {
+    } else if (
+      "name" in data &&
+      (data.name.includes("run_t") || data.name.includes("Run TypeScript"))
+    ) {
       return json(runTsSlashCommandResponse());
     }
 
