@@ -45,9 +45,7 @@ export const sendTsCodeOutput = async (data: InteractionData) => {
   try {
     result = await fetch(tsOverHttpUrl, {
       method: "POST",
-      body: JSON.stringify({
-        code,
-      }),
+      body: `{"code": "${encodeURIComponent(code)}"}`,
       headers: {
         "Content-Type": "application/json",
       },
@@ -72,7 +70,10 @@ export const sendTsCodeOutput = async (data: InteractionData) => {
   return {
     type: 4,
     data: {
-      content: `Code:\n\`\`\`ts\n${code}\n\`\`\`\nOutput:\n\`\`\`\n${result}\n\`\`\``,
+      content: `Code:\n\`\`\`ts\n${code}\n\`\`\`\nOutput:\n\`\`\`\n${result.replace(
+        `[0m[1m[31merror[0m: `,
+        "error: ",
+      )}\n\`\`\``,
     },
   };
 };
