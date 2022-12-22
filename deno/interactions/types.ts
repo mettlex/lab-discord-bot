@@ -9,6 +9,43 @@ export type ComponentInInteractionData = {
   type: 1;
 };
 
+export type InteractedMessage = {
+  application_id: string;
+  attachments: [];
+  author: User;
+  channel_id: string;
+  components: {
+    components: [
+      {
+        custom_id: string;
+        label: string;
+        style: number;
+        type: number;
+      },
+    ];
+    type: number;
+  }[];
+  content: string;
+  edited_timestamp: string | null;
+  embeds: [];
+  flags: number;
+  id: string;
+  interaction: {
+    id: string;
+    name: string;
+    type: number;
+    user: User;
+  };
+  mention_everyone: boolean;
+  mention_roles: [];
+  mentions: [];
+  pinned: boolean;
+  timestamp: string;
+  tts: boolean;
+  type: number;
+  webhook_id: string;
+};
+
 export type InteractionData =
   | {
       guild_id: string;

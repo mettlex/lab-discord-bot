@@ -27,7 +27,15 @@ export const runTsSlashCommands = [
   },
 ];
 
-export const sendTsCodeOutput = async (data: InteractionData) => {
+export const sendTsCodeOutput = async (
+  data: InteractionData,
+  state?: {
+    code: string;
+    logPrefix: string;
+    promptValue: string;
+    promptSkips: number;
+  },
+) => {
   if (!("custom_id" in data)) {
     return {
       type: 4,
@@ -38,14 +46,27 @@ export const sendTsCodeOutput = async (data: InteractionData) => {
     };
   }
 
-  const code = data.components[0].components[0].value;
+  const code = state?.code || data.components[0].components[0].value;
 
   let result = "";
+
+  const bodyWithState = state
+    ? JSON.stringify({
+        code: code.toString(),
+        state: {
+          logPrefix: "",
+          promptValue: state.promptValue,
+          promptSkips: state.promptSkips,
+        },
+      })
+    : "";
+
+  console.log(bodyWithState);
 
   try {
     result = await fetch(tsOverHttpUrl, {
       method: "POST",
-      body: `{"code": "${encodeURIComponent(code)}"}`,
+      body: state ? bodyWithState : `{"code": "${encodeURIComponent(code)}"}`,
       headers: {
         "Content-Type": "application/json",
       },
@@ -65,6 +86,43 @@ export const sendTsCodeOutput = async (data: InteractionData) => {
   } catch (error) {
     console.error(error);
     result = (error as Error).message;
+  }
+
+  if (
+    result.includes(`{"state":{`) &&
+    result.trim().endsWith("}") &&
+    result.includes("prompt")
+  ) {
+    const lastLine = result.trim().split("\n").slice(-1)[0];
+    const { state: parsedState } = JSON.parse(lastLine) as {
+      state: { prompt: { title: string; count: number } };
+    };
+
+    const logPrefix = result.replace(lastLine, "");
+
+    return {
+      type: 4,
+      data: {
+        content: `Code:\n\`\`\`ts\n${code}\`\`\`\nLog:\n${
+          logPrefix.length > 0 ? `\`\`\`${logPrefix}\`\`\`\n` : ""
+        }${parsedState.prompt.title}`,
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                label: "Open Prompt",
+                style: 1,
+                custom_id: `button_prompt_${
+                  state?.promptSkips || parsedState.prompt.count
+                }`,
+              },
+            ],
+          },
+        ],
+      },
+    };
   }
 
   return {

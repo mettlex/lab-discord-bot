@@ -11,7 +11,11 @@ import {
   runTsSlashCommandResponse,
   sendTsCodeOutput,
 } from "./run_typescript/mod.ts";
-import { InteractingMember, InteractionData } from "./types.ts";
+import {
+  InteractedMessage,
+  InteractingMember,
+  InteractionData,
+} from "./types.ts";
 import { PUBLIC_KEY } from "./config.ts";
 import { tsRateLimit } from "./store.ts";
 
@@ -52,10 +56,12 @@ async function home(request: Request) {
     type = 0,
     data,
     member,
+    message,
   } = JSON.parse(body) as {
     type: number;
     data: InteractionData;
     member: InteractingMember;
+    message: InteractedMessage;
   };
   // Discord performs Ping interactions to test our application.
   // Type 1 in a request implies a Ping interaction.
@@ -97,43 +103,103 @@ async function home(request: Request) {
       });
     }
 
-    if (data.custom_id.includes("ts_code")) {
-      if (!tsRateLimit[member.user.id]) {
-        tsRateLimit[member.user.id] = {
-          requests: 1,
-          lastRequestAt: Date.now(),
-        };
-      } else {
-        const trl = tsRateLimit[member.user.id];
+    if (!tsRateLimit[member.user.id]) {
+      tsRateLimit[member.user.id] = {
+        requests: 1,
+        lastRequestAt: Date.now(),
+      };
+    } else {
+      const trl = tsRateLimit[member.user.id];
 
-        const oneMinute = 60000;
+      const oneMinute = 60000;
 
-        trl.requests++;
+      trl.requests++;
 
-        if (Date.now() - trl.lastRequestAt < oneMinute && trl.requests > 3) {
-          return json({
-            type: 4,
-            data: {
-              content: `Cool down. Retry after ${Math.ceil(
-                60 - (Date.now() - trl.lastRequestAt) / 1000,
-              )} seconds.`,
-              flags: 1 << 6,
-            },
-          });
-        } else if (Date.now() - trl.lastRequestAt > oneMinute) {
-          tsRateLimit[member.user.id].requests = 0;
-        }
+      if (Date.now() - trl.lastRequestAt < oneMinute && trl.requests > 10) {
+        return json({
+          type: 4,
+          data: {
+            content: `Cool down. Retry after ${Math.ceil(
+              60 - (Date.now() - trl.lastRequestAt) / 1000,
+            )} seconds.`,
+            flags: 1 << 6,
+          },
+        });
+      } else if (Date.now() - trl.lastRequestAt > oneMinute) {
+        tsRateLimit[member.user.id].requests = 0;
       }
+    }
 
-      tsRateLimit[member.user.id].lastRequestAt = Date.now();
+    tsRateLimit[member.user.id].lastRequestAt = Date.now();
 
+    if (data.custom_id === "ts_code") {
       return json(await sendTsCodeOutput(data));
+    } else if (data.custom_id === "prompt_for_ts_program") {
+      const parts = message.content.split("```");
+
+      const code = parts[1].replace("ts\n", "");
+      const logPrefix = parts[3];
+      const promptValue = data.components[0].components[0].value;
+      const promptSkips = +data.components[0].components[0].custom_id.replace(
+        "prompt_",
+        "",
+      );
+
+      return json(
+        await sendTsCodeOutput(data, {
+          code,
+          logPrefix,
+          promptValue,
+          promptSkips,
+        }),
+      );
     }
 
     return json({
       type: 4,
       data: {
         content: `OK Modal!`,
+        flags: 1 << 6,
+      },
+    });
+  }
+  // Type 3 in a request is a Message Component Interaction.
+  else if (type === 3) {
+    if ("custom_id" in data && data.custom_id.startsWith("button_prompt_")) {
+      return json({
+        type: 9,
+        data: {
+          title: "Prompt",
+          custom_id: "prompt_for_ts_program",
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 4,
+                  custom_id: `prompt_${data.custom_id.replace(
+                    "button_prompt_",
+                    "",
+                  )}`,
+                  label: `${
+                    message?.content?.split("```").slice(-1)[0]?.trim() ||
+                    "Enter a value"
+                  }`,
+                  style: 1,
+                  min_length: 1,
+                  required: true,
+                },
+              ],
+            },
+          ],
+        },
+      });
+    }
+
+    return json({
+      type: 4,
+      data: {
+        content: `OK!`,
         flags: 1 << 6,
       },
     });
