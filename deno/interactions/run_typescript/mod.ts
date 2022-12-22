@@ -31,8 +31,8 @@ export const sendTsCodeOutput = async (
   data: InteractionData,
   state?: {
     code: string;
-    logPrefix: string;
-    promptValue: string;
+    logPrefix?: string;
+    promptValues: string[];
     promptSkips: number;
   },
 ) => {
@@ -55,7 +55,7 @@ export const sendTsCodeOutput = async (
         code: code.toString(),
         state: {
           logPrefix: "",
-          promptValue: state.promptValue,
+          promptValues: state.promptValues,
           promptSkips: state.promptSkips,
         },
       })
@@ -88,23 +88,29 @@ export const sendTsCodeOutput = async (
     result = (error as Error).message;
   }
 
+  let inputs = " ";
+
+  if (state?.promptValues?.length) {
+    inputs = state.promptValues.join("\n");
+  }
+
   if (
     result.includes(`{"state":{`) &&
     result.trim().endsWith("}") &&
     result.includes("prompt")
   ) {
     const lastLine = result.trim().split("\n").slice(-1)[0];
-    const { state: parsedState } = JSON.parse(lastLine) as {
-      state: { prompt: { title: string; count: number } };
-    };
+    const parsedData = JSON.parse(lastLine);
+
+    const parsedState = parsedData.state;
 
     const logPrefix = result.replace(lastLine, "");
 
     return {
       type: 4,
       data: {
-        content: `Code:\n\`\`\`ts\n${code}\`\`\`\nLog:\n${
-          logPrefix.length > 0 ? `\`\`\`${logPrefix}\`\`\`\n` : ""
+        content: `Code:\`\`\`ts\n${code}\`\`\` Input:\n\`\`\`\n${inputs}\n\`\`\` Output:\n${
+          logPrefix.length > 0 ? `\`\`\`\n${logPrefix}\`\`\`\n` : ""
         }${parsedState.prompt.title}`,
         components: [
           {
@@ -114,9 +120,7 @@ export const sendTsCodeOutput = async (
                 type: 2,
                 label: "Open Prompt",
                 style: 1,
-                custom_id: `button_prompt_${
-                  state?.promptSkips || parsedState.prompt.count
-                }`,
+                custom_id: `button_prompt_${parsedState.prompt.count}`,
               },
             ],
           },
@@ -128,7 +132,7 @@ export const sendTsCodeOutput = async (
   return {
     type: 4,
     data: {
-      content: `Code:\n\`\`\`ts\n${code}\n\`\`\`\nOutput:\n\`\`\`\n${result.replace(
+      content: `Code:\`\`\`ts\n${code}\`\`\` Input:\n\`\`\`\n${inputs}\n\`\`\` Output:\n\`\`\`\n${result.replace(
         `[0m[1m[31merror[0m: `,
         "error: ",
       )}\n\`\`\``,

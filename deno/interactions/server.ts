@@ -138,8 +138,11 @@ async function home(request: Request) {
       const parts = message.content.split("```");
 
       const code = parts[1].replace("ts\n", "");
-      const logPrefix = parts[3];
-      const promptValue = data.components[0].components[0].value;
+      const promptValues = parts[3]
+        .trim()
+        .split("\n")
+        .filter((x) => x)
+        .concat([data.components[0].components[0].value]);
       const promptSkips = +data.components[0].components[0].custom_id.replace(
         "prompt_",
         "",
@@ -148,8 +151,7 @@ async function home(request: Request) {
       return json(
         await sendTsCodeOutput(data, {
           code,
-          logPrefix,
-          promptValue,
+          promptValues,
           promptSkips,
         }),
       );
