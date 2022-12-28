@@ -1,5 +1,5 @@
-import { dictators, headers, isDictatorModeOn } from "../config.ts";
-import { InteractingMember, InteractionData } from "../types.ts";
+import { dictators, headers, isDictatorModeOn } from "../../config.ts";
+import { InteractingMember, InteractionData } from "../../types.ts";
 
 export const afkAppCommands = [
   {

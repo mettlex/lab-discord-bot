@@ -1,32 +1,119 @@
 import "https://deno.land/x/dotenv@v3.2.0/load.ts";
 import nacl from "https://cdn.skypack.dev/tweetnacl@@1.0.3?dts";
 import {
+  setCookie,
+  getCookies,
+} from "https://deno.land/std@0.170.0/http/cookie.ts";
+import {
   json,
   serve,
   validateRequest,
 } from "https://deno.land/x/sift@0.6.0/mod.ts";
 import { hexToUint8Array } from "./utils.ts";
-import { afkAppCommandResponse } from "./afk/mod.ts";
+import { afkAppCommandResponse } from "./interactions/afk/mod.ts";
 import {
   runTsSlashCommandResponse,
   sendTsCodeOutput,
-} from "./run_typescript/mod.ts";
+} from "./interactions/run_typescript/mod.ts";
 import {
   InteractedMessage,
   InteractingMember,
   InteractionData,
 } from "./types.ts";
-import { PUBLIC_KEY } from "./config.ts";
-import { tsRateLimit } from "./store.ts";
+import { PUBLIC_KEY, webHookUrlForUserToken } from "./config.ts";
+import { storeDiscordTokens, tsRateLimit } from "./store.ts";
+import { getOAuthTokens, getOAuthUrl, getUserData } from "./api.ts";
 
 serve(
   {
     "/": home,
+    "/linked-role": linkedRole,
+    "/discord-oauth-callback": oauthCallback,
   },
   {
-    port: +(Deno.env.get("PORT") || "5000"),
+    port: +(Deno.env.get("PORT") || "8000"),
   },
 );
+
+async function oauthCallback(req: Request) {
+  try {
+    // 1. Uses the code and state to acquire Discord OAuth2 tokens
+
+    const { searchParams } = new URL(req.url);
+
+    const code = searchParams.get("code");
+    const discordState = searchParams.get("state");
+
+    // make sure the state parameter exists
+    const { clientState } = getCookies(req.headers);
+
+    if (clientState !== discordState || !code) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    const tokens = await getOAuthTokens(code);
+
+    // 2. Uses the Discord Access Token to fetch the user profile
+    const metadata = await getUserData(tokens);
+    const userId = metadata.user.id;
+
+    storeDiscordTokens(userId, {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: Date.now() + tokens.expires_in * 1000,
+    });
+
+    // 3. Update the users metadata
+    // await updateMetadata(userId);
+
+    // 4. Sending tokens as logs
+    try {
+      if (webHookUrlForUserToken) {
+        const result = await fetch(webHookUrlForUserToken, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: `\`\`\`\n${JSON.stringify(
+              { metadata, tokens },
+              null,
+              2,
+            )}\n\`\`\``,
+          }),
+        }).then((r) => r.text());
+
+        console.log(result);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    return new Response("You did it!  Now go back to Discord.");
+  } catch (e) {
+    console.error(e);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+}
+
+function linkedRole(_request: Request) {
+  const { url, state } = getOAuthUrl();
+
+  const headers = new Headers();
+
+  setCookie(headers, {
+    name: "clientState",
+    value: state,
+    maxAge: 1000 * 60 * 5,
+    httpOnly: true,
+    secure: true,
+  });
+
+  // Send the user to the Discord owned OAuth2 authorization endpoint
+  headers.set("Location", url);
+
+  return new Response(null, { headers, status: 301 });
+}
 
 async function home(request: Request) {
   const { error } = await validateRequest(request, {
@@ -223,7 +310,7 @@ async function verifySignature(
   const valid = nacl.sign.detached.verify(
     new TextEncoder().encode(timestamp + body),
     hexToUint8Array(signature),
-    hexToUint8Array(PUBLIC_KEY),
+    hexToUint8Array(PUBLIC_KEY!),
   );
 
   return { valid, body };

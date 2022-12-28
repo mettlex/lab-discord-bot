@@ -115,3 +115,14 @@ export interface User {
   public_flags: number;
   username: string;
 }
+
+export type Tokens = {
+  access_token: string;
+  refresh_token: string;
+  expires_in?: number;
+  expires_at: number;
+};
+
+export type Metadata = {
+  ageGroup: string;
+};

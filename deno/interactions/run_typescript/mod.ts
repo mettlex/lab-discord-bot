@@ -1,5 +1,5 @@
-import { tsOverHttpUrl } from "../config.ts";
-import { InteractionData } from "../types.ts";
+import { tsOverHttpUrl } from "../../config.ts";
+import { InteractionData } from "../../types.ts";
 
 export const runTsAppCommands = [
   {

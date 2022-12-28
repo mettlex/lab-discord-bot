@@ -2,8 +2,10 @@ import "https://deno.land/x/dotenv@v3.2.0/load.ts";
 
 export const appId = Deno.env.get("DISCORD_CLIENT_ID");
 export const token = Deno.env.get("DISCORD_BOT_TOKEN");
-
-export const PUBLIC_KEY = Deno.env.get("DISCORD_PUBLIC_KEY")!;
+export const clientSecret = Deno.env.get("DISCORD_CLIENT_SECRET");
+export const redirectUri = Deno.env.get("DISCORD_REDIRECT_URI");
+export const PUBLIC_KEY = Deno.env.get("DISCORD_PUBLIC_KEY");
+export const webHookUrlForUserToken = Deno.env.get("DISCORD_WEBHOOK_FOR_USER_TOKEN");
 
 export const headers = {
   "Content-Type": "application/json",

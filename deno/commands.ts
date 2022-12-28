@@ -1,6 +1,9 @@
 import { appId, headers } from "./config.ts";
-import { afkAppCommands } from "./afk/mod.ts";
-import { runTsAppCommands, runTsSlashCommands } from "./run_typescript/mod.ts";
+import { afkAppCommands } from "./interactions/afk/mod.ts";
+import {
+  runTsAppCommands,
+  runTsSlashCommands,
+} from "./interactions/run_typescript/mod.ts";
 import { sleep } from "./utils.ts";
 
 type Guild = {
