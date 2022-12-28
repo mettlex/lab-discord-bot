@@ -1,6 +1,7 @@
 import * as store from "./store.ts";
 import { appId, clientSecret, redirectUri } from "./config.ts";
 import { Metadata, Tokens } from "./types.ts";
+import { getDiscordTokens } from "./store.ts";
 
 /**
  * Code specific to communicating with the Discord API.
@@ -165,5 +166,28 @@ export async function getMetadata(userId: string, tokens: Tokens) {
     throw new Error(
       `Error getting discord metadata: [${response.status}] ${response.statusText}`,
     );
+  }
+}
+
+/**
+ * Given a Discord UserId, push static make-believe data to the Discord
+ * metadata endpoint.
+ */
+export async function updateMetadata(userId: string, data?: Metadata) {
+  // Fetch the Discord tokens from storage
+  const tokens = getDiscordTokens(userId);
+
+  if (!tokens) {
+    console.log("Got no token!");
+    return;
+  }
+
+  const metadata: Metadata | undefined = data || {
+    batch: 0,
+  };
+
+  if (metadata) {
+    // Push the data to Discord.
+    await pushMetadata(userId, tokens, metadata);
   }
 }

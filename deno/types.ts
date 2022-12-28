@@ -79,6 +79,8 @@ export interface InteractingMember {
 
 export interface Option {
   name: string;
+  type?: number;
+  value?: unknown;
 }
 
 export interface Resolved {

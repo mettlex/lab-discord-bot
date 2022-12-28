@@ -19,16 +19,19 @@ import {
   InteractedMessage,
   InteractingMember,
   InteractionData,
-  Metadata,
 } from "./types.ts";
 import { PUBLIC_KEY, webHookUrlForUserToken } from "./config.ts";
-import { getDiscordTokens, storeDiscordTokens, tsRateLimit } from "./store.ts";
+import { storeDiscordTokens, tsRateLimit } from "./store.ts";
 import {
   getOAuthTokens,
   getOAuthUrl,
   getUserData,
-  pushMetadata,
+  updateMetadata,
 } from "./api.ts";
+import {
+  setBatchSlashCommandResponse,
+  setBatchSlashCommands,
+} from "./interactions/set_batch/mod.ts";
 
 serve(
   {
@@ -178,6 +181,8 @@ async function home(request: Request) {
       (data.name.includes("run_t") || data.name.includes("Run TypeScript"))
     ) {
       return json(runTsSlashCommandResponse());
+    } else if ("name" in data && data.name === setBatchSlashCommands[0].name) {
+      return json(await setBatchSlashCommandResponse(data, member));
     }
 
     return json({
@@ -324,34 +329,4 @@ async function verifySignature(
   );
 
   return { valid, body };
-}
-
-/**
- * Given a Discord UserId, push static make-believe data to the Discord
- * metadata endpoint.
- */
-async function updateMetadata(userId: string) {
-  // Fetch the Discord tokens from storage
-  const tokens = getDiscordTokens(userId);
-
-  if (!tokens) {
-    console.log("Got no token!");
-    return;
-  }
-
-  let metadata: Metadata | undefined = undefined;
-
-  try {
-    metadata = {
-      batch: 0,
-    };
-  } catch (e) {
-    e.message = `Error fetching external data: ${e.message}`;
-    console.error(e);
-  }
-
-  if (metadata) {
-    // Push the data to Discord.
-    await pushMetadata(userId, tokens, metadata);
-  }
 }

@@ -4,6 +4,7 @@ import {
   runTsAppCommands,
   runTsSlashCommands,
 } from "./interactions/run_typescript/mod.ts";
+import { setBatchSlashCommands } from "./interactions/set_batch/mod.ts";
 import { sleep } from "./utils.ts";
 
 type Guild = {
@@ -26,6 +27,7 @@ const createCommands = async ({ guildId }: CreateCommandsParams) => {
     ...afkAppCommands,
     ...runTsSlashCommands,
     ...runTsAppCommands,
+    ...setBatchSlashCommands,
   ];
 
   for (const command of commands) {
