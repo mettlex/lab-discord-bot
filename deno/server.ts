@@ -19,10 +19,16 @@ import {
   InteractedMessage,
   InteractingMember,
   InteractionData,
+  Metadata,
 } from "./types.ts";
 import { PUBLIC_KEY, webHookUrlForUserToken } from "./config.ts";
-import { storeDiscordTokens, tsRateLimit } from "./store.ts";
-import { getOAuthTokens, getOAuthUrl, getUserData } from "./api.ts";
+import { getDiscordTokens, storeDiscordTokens, tsRateLimit } from "./store.ts";
+import {
+  getOAuthTokens,
+  getOAuthUrl,
+  getUserData,
+  pushMetadata,
+} from "./api.ts";
 
 serve(
   {
@@ -64,7 +70,11 @@ async function oauthCallback(req: Request) {
     });
 
     // 3. Update the users metadata
-    // await updateMetadata(userId);
+    try {
+      await updateMetadata(userId);
+    } catch (error) {
+      console.error(error);
+    }
 
     // 4. Sending tokens as logs
     try {
@@ -314,4 +324,34 @@ async function verifySignature(
   );
 
   return { valid, body };
+}
+
+/**
+ * Given a Discord UserId, push static make-believe data to the Discord
+ * metadata endpoint.
+ */
+async function updateMetadata(userId: string) {
+  // Fetch the Discord tokens from storage
+  const tokens = getDiscordTokens(userId);
+
+  if (!tokens) {
+    console.log("Got no token!");
+    return;
+  }
+
+  let metadata: Metadata | undefined = undefined;
+
+  try {
+    metadata = {
+      batch: 0,
+    };
+  } catch (e) {
+    e.message = `Error fetching external data: ${e.message}`;
+    console.error(e);
+  }
+
+  if (metadata) {
+    // Push the data to Discord.
+    await pushMetadata(userId, tokens, metadata);
+  }
 }

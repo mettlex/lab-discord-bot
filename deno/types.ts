@@ -124,5 +124,5 @@ export type Tokens = {
 };
 
 export type Metadata = {
-  ageGroup: string;
+  batch: number;
 };
