@@ -13,6 +13,12 @@ const body = [
     description: "Which batch you belong to",
     type: 3,
   },
+  {
+    key: "is_mentor",
+    name: "Mentor",
+    description: "Mentor",
+    type: 7,
+  },
 ];
 
 const response = await fetch(url, {
