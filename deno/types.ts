@@ -59,6 +59,8 @@ export type InteractionData =
   | {
       components: ComponentInInteractionData[];
       custom_id: string;
+      component_type?: number;
+      values?: string[];
     };
 
 export interface InteractingMember {
@@ -127,4 +129,17 @@ export type Tokens = {
 
 export type Metadata = {
   batch: number;
+};
+
+export type SurprisinglyPopularVotingData = {
+  initiator: string;
+  ended: boolean;
+  candidates: string[];
+  votes: {
+    [userId: string]: {
+      chosen: string;
+      predicted: string;
+    };
+  };
+  winners: string[];
 };

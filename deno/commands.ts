@@ -5,6 +5,10 @@ import {
   runTsSlashCommands,
 } from "./interactions/run_typescript/mod.ts";
 import { setBatchSlashCommands } from "./interactions/set_batch/mod.ts";
+import {
+  spAppCommands,
+  spSlashCommands,
+} from "./interactions/surprisingly_popular/mod.ts";
 import { sleep } from "./utils.ts";
 
 type Guild = {
@@ -28,6 +32,8 @@ const createCommands = async ({ guildId }: CreateCommandsParams) => {
     ...runTsSlashCommands,
     ...runTsAppCommands,
     ...setBatchSlashCommands,
+    ...spSlashCommands,
+    ...spAppCommands,
   ];
 
   for (const command of commands) {

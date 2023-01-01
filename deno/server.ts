@@ -32,6 +32,14 @@ import {
   setBatchSlashCommandResponse,
   setBatchSlashCommands,
 } from "./interactions/set_batch/mod.ts";
+import {
+  buildMessageForEndVoting,
+  buildMessageForSPVotingStart,
+  buildSelectMenusForSPVoting,
+  getSPCommandRespose,
+  spAppCommands,
+  spSlashCommands,
+} from "./interactions/surprisingly_popular/mod.ts";
 
 serve(
   {
@@ -183,6 +191,11 @@ async function home(request: Request) {
       return json(runTsSlashCommandResponse());
     } else if ("name" in data && data.name === setBatchSlashCommands[0].name) {
       return json(await setBatchSlashCommandResponse(data, member));
+    } else if (
+      ("name" in data && data.name === spSlashCommands[0].name) ||
+      ("name" in data && data.name === spAppCommands[0].name)
+    ) {
+      return json(getSPCommandRespose());
     }
 
     return json({
@@ -257,6 +270,8 @@ async function home(request: Request) {
           promptSkips,
         }),
       );
+    } else if (data.custom_id === "vote_button_for_sp_1") {
+      return json(buildMessageForSPVotingStart(data, member));
     }
 
     return json({
@@ -298,6 +313,52 @@ async function home(request: Request) {
           ],
         },
       });
+    } else if ("custom_id" in data && data.custom_id === "button_form_for_sp") {
+      return json({
+        type: 9,
+        data: {
+          title: "Enter Candidates",
+          custom_id: "vote_button_for_sp_1",
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 4,
+                  custom_id: `candidates_for_sp`,
+                  label: `Enter candiate names with commas`,
+                  style: 1,
+                  min_length: 1,
+                  required: true,
+                },
+              ],
+            },
+          ],
+        },
+      });
+    } else if (
+      "custom_id" in data &&
+      data.custom_id === "select_menu_for_sp_2"
+    ) {
+      return json(buildSelectMenusForSPVoting(2, data, message, member));
+    } else if ("custom_id" in data && data.custom_id === "button_for_vote") {
+      return json(buildSelectMenusForSPVoting(1, data, message, member));
+    } else if (
+      "custom_id" in data &&
+      data.custom_id === "select_menu_done_for_sp"
+    ) {
+      buildSelectMenusForSPVoting(3, data, message, member);
+
+      return json({
+        type: 4,
+        data: {
+          content: `${
+            member.nick ? member.nick : member.user.username
+          } has voted.`,
+        },
+      });
+    } else if ("custom_id" in data && data.custom_id === "button_to_end_vote") {
+      return json(buildMessageForEndVoting(member, message));
     }
 
     return json({
