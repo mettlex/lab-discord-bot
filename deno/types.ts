@@ -1,3 +1,23 @@
+export type WebHook = {
+  type: number;
+  id: string;
+  name: string;
+  avatar: string;
+  channel_id: string;
+  guild_id: string;
+  application_id: string;
+  user: {
+    id: string;
+    username: string;
+    avatar: string;
+    avatar_decoration: null | string;
+    discriminator: string;
+    public_flags: number;
+    bot: boolean;
+  };
+  token?: string;
+};
+
 export type ComponentField = {
   custom_id: string;
   type: number;

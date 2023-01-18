@@ -1,6 +1,10 @@
 import { appId, headers } from "./config.ts";
 import { afkAppCommands } from "./interactions/afk/mod.ts";
 import {
+  emojiAppCommands,
+  emojiSlashCommands,
+} from "./interactions/emoji/mod.ts";
+import {
   runTsAppCommands,
   runTsSlashCommands,
 } from "./interactions/run_typescript/mod.ts";
@@ -34,6 +38,8 @@ const createCommands = async ({ guildId }: CreateCommandsParams) => {
     ...setBatchSlashCommands,
     ...spSlashCommands,
     ...spAppCommands,
+    ...emojiAppCommands,
+    ...emojiSlashCommands,
   ];
 
   for (const command of commands) {

@@ -40,6 +40,11 @@ import {
   spAppCommands,
   spSlashCommands,
 } from "./interactions/surprisingly_popular/mod.ts";
+import {
+  emojiSlashCommands,
+  sendEmojiSlashCommand,
+  setEmojiGetLinkSlashCommandResponse,
+} from "./interactions/emoji/mod.ts";
 
 serve(
   {
@@ -165,11 +170,13 @@ async function home(request: Request) {
     data,
     member,
     message,
+    channel_id,
   } = JSON.parse(body) as {
     type: number;
     data: InteractionData;
     member: InteractingMember;
     message: InteractedMessage;
+    channel_id: string;
   };
   // Discord performs Ping interactions to test our application.
   // Type 1 in a request implies a Ping interaction.
@@ -191,6 +198,10 @@ async function home(request: Request) {
       return json(runTsSlashCommandResponse());
     } else if ("name" in data && data.name === setBatchSlashCommands[0].name) {
       return json(await setBatchSlashCommandResponse(data, member));
+    } else if ("name" in data && data.name === emojiSlashCommands[0].name) {
+      return json(setEmojiGetLinkSlashCommandResponse(data, member));
+    } else if ("name" in data && data.name === emojiSlashCommands[1].name) {
+      return json(await sendEmojiSlashCommand(data, member, channel_id));
     } else if (
       ("name" in data && data.name === spSlashCommands[0].name) ||
       ("name" in data && data.name === spAppCommands[0].name)
