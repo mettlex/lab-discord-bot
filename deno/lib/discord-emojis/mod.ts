@@ -42,7 +42,7 @@ export const sendEmoji = async ({
       {
         method: "POST",
         body: JSON.stringify({
-          content: `<a${emoji.n}${emoji.c
+          content: `<${emoji.c.includes(".gif") ? "a" : ""}${emoji.n}${emoji.c
             .replace(/.+emojis\//g, "")
             .replace(/\..+/g, "")}>`,
           username: member.nick ? member.nick : member.user.username,
