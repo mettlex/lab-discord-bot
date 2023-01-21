@@ -5,13 +5,17 @@ const __dirname = new URL(".", import.meta.url).pathname;
 
 const decoder = new TextDecoder("utf-8");
 
-const data = Deno.readFileSync(
-  `${__dirname}../../lib/discord-emojis/uniques.json`,
-);
+let emojis: Emoji[] | undefined;
 
-const content = decoder.decode(data);
+if (typeof Deno.readFileSync === "function") {
+  const data = Deno.readFileSync(
+    `${__dirname}../../lib/discord-emojis/uniques.json`,
+  );
 
-const emojis = JSON.parse(content) as Emoji[];
+  const content = decoder.decode(data);
+
+  emojis = JSON.parse(content);
+}
 
 export const emojiAppCommands = [
   // {
@@ -61,7 +65,7 @@ export const sendEmojiSlashCommand = async (
   const name =
     "options" in data && data.options && (data.options[0].value as string);
 
-  if (!name) {
+  if (!name || !emojis) {
     return {
       type: 4,
       data: {
@@ -115,7 +119,7 @@ export const setEmojiGetLinkSlashCommandResponse = (
   const name =
     "options" in data && data.options && (data.options[0].value as string);
 
-  if (!name) {
+  if (!name || !emojis) {
     return {
       type: 4,
       data: {
