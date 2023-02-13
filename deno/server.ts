@@ -171,12 +171,14 @@ async function home(request: Request) {
     member,
     message,
     channel_id,
+    guild_id,
   } = JSON.parse(body) as {
     type: number;
     data: InteractionData;
     member: InteractingMember;
     message: InteractedMessage;
     channel_id: string;
+    guild_id: string;
   };
   // Discord performs Ping interactions to test our application.
   // Type 1 in a request implies a Ping interaction.
@@ -351,14 +353,18 @@ async function home(request: Request) {
       "custom_id" in data &&
       data.custom_id === "select_menu_for_sp_2"
     ) {
-      return json(buildSelectMenusForSPVoting(2, data, message, member));
+      return json(
+        await buildSelectMenusForSPVoting(2, data, message, member, guild_id),
+      );
     } else if ("custom_id" in data && data.custom_id === "button_for_vote") {
-      return json(buildSelectMenusForSPVoting(1, data, message, member));
+      return json(
+        await buildSelectMenusForSPVoting(1, data, message, member, guild_id),
+      );
     } else if (
       "custom_id" in data &&
       data.custom_id === "select_menu_done_for_sp"
     ) {
-      buildSelectMenusForSPVoting(3, data, message, member);
+      await buildSelectMenusForSPVoting(3, data, message, member, guild_id);
 
       return json({
         type: 4,

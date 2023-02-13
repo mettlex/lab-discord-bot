@@ -1,6 +1,11 @@
 import * as store from "./store.ts";
-import { appId, clientSecret, redirectUri } from "./config.ts";
-import { Metadata, Tokens } from "./types.ts";
+import {
+  appId,
+  clientSecret,
+  headers as botHeaders,
+  redirectUri,
+} from "./config.ts";
+import { DiscordEmoji, Metadata, Tokens } from "./types.ts";
 import { getDiscordTokens } from "./store.ts";
 
 /**
@@ -144,6 +149,28 @@ export async function pushMetadata(
       `Error pushing discord metadata: [${response.status}] ${response.statusText}`,
     );
   }
+}
+
+export async function getGuildEmojis(
+  guildId: string,
+): Promise<DiscordEmoji[] | null> {
+  // GET /guilds/{guild.id}/emojis
+  const url = `https://discord.com/api/v10/guilds/${guildId}/emojis`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: botHeaders,
+  });
+
+  if (!response.ok) {
+    console.error(
+      `Error getting guild emojis: [${response.status}] ${response.statusText}`,
+    );
+
+    return null;
+  }
+
+  return response.json();
 }
 
 /**

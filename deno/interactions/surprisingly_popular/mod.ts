@@ -6,6 +6,7 @@ import {
   SurprisinglyPopularVotingData,
 } from "../../types.ts";
 import spAnswer from "../../lib/surprisingly-popular/mod.ts";
+import { getGuildEmojis } from "../../api.ts";
 
 export const spAppCommands = [
   {
@@ -84,11 +85,12 @@ export const getSPCommandRespose = () => {
   };
 };
 
-export const buildSelectMenusForSPVoting = (
+export const buildSelectMenusForSPVoting = async (
   question: number,
   data: InteractionData,
   message: InteractedMessage,
   member: InteractingMember,
+  guild_id: string,
 ) => {
   const id = message.content.split("`")[1];
 
@@ -121,14 +123,7 @@ export const buildSelectMenusForSPVoting = (
 
   if (existingData) {
     storeSpData(id, { ...existingData });
-  }
-
-  const options = existingData?.candidates.map((c) => ({
-    label: c,
-    value: c,
-  }));
-
-  if (!options) {
+  } else {
     return {
       type: 4,
       data: {
@@ -137,6 +132,50 @@ export const buildSelectMenusForSPVoting = (
       },
     };
   }
+
+  const guildEmojis = await getGuildEmojis(guild_id);
+
+  if (!guildEmojis) {
+    return {
+      type: 4,
+      data: {
+        content: `There is error getting server emojis.`,
+        flags: 1 << 6,
+      },
+    };
+  }
+
+  const emojiPartials = existingData.candidates.map((cand) => {
+    const re = /\:(\w{1,100})\:/g;
+
+    const match = re.exec(cand);
+
+    if (!match) {
+      return {};
+    }
+
+    const foundEmoji = guildEmojis.find(
+      (x) => x.name.trim().toLowerCase() === match[1]?.toLowerCase(),
+    );
+
+    if (!foundEmoji) {
+      return {};
+    }
+
+    return {
+      emoji: {
+        name: foundEmoji.name,
+        id: foundEmoji.id,
+        animated: foundEmoji.animated,
+      },
+    };
+  });
+
+  const options = existingData.candidates.map((c, i) => ({
+    label: c.replace(/\:\w{1,100}\:/g, "").substring(0, 100),
+    value: c,
+    ...emojiPartials[i],
+  }));
 
   return {
     type: 4,
